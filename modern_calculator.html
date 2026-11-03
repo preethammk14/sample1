@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Calculator</title>
+  <!-- Tailwind CSS CDN for styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Scrollbar aesthetics for history view */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+    /* Button active tactile push effect */
+    .calc-btn {
+      transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+    .calc-btn:active, .calc-btn.btn-pressed {
+      transform: scale(0.94);
+      filter: brightness(1.18);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-3 sm:p-6 select-none">
+
+  <!-- Main Calculator Card -->
+  <main class="w-full max-w-sm sm:max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col transition-all">
+    
+    <!-- Top Bar: Header & History toggle -->
+    <header class="px-6 pt-5 pb-2 flex items-center justify-between text-slate-400">
+      <div class="flex items-center space-x-2">
+        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block shadow-sm"></span>
+        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-sm"></span>
+        <span class="text-xs tracking-wider uppercase font-semibold text-slate-400 ml-2">Calc</span>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="historyToggleBtn" title="Toggle Calculation History" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 active:scale-95 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Slide-down / Dropdown History Drawer -->
+    <section id="historyDrawer" class="hidden border-b border-slate-800/80 bg-slate-950/60 px-6 py-3 transition-all duration-300">
+      <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-xs uppercase tracking-wider text-slate-400 font-semibold">
+        <span>History</span>
+        <button id="clearHistoryBtn" class="text-rose-400 hover:text-rose-300 text-[11px] underline">Clear</button>
+      </div>
+      <div id="historyList" class="max-h-36 overflow-y-auto space-y-2 custom-scrollbar text-right text-sm">
+        <div class="text-slate-500 text-xs italic py-2 text-center">No calculations yet</div>
+      </div>
+    </section>
+
+    <!-- Display Area -->
+    <section class="px-6 py-4 flex flex-col justify-end text-right min-h-[130px] border-b border-slate-800/60 bg-gradient-to-b from-transparent to-slate-950/30">
+      <!-- Full Expression / Sub-display -->
+      <div id="expressionDisplay" class="text-sm sm:text-base text-slate-400 font-medium tracking-wide min-h-[1.5rem] break-all overflow-x-auto whitespace-nowrap custom-scrollbar"></div>
+      
+      <!-- Primary Current Input / Result -->
+      <div id="primaryDisplay" class="text-4xl sm:text-5xl font-light tracking-tight text-white mt-1 break-all overflow-x-auto whitespace-nowrap custom-scrollbar">0</div>
+    </section>
+
+    <!-- Keypad Grid -->
+    <section class="p-5 sm:p-6 grid grid-cols-4 gap-2.5 sm:gap-3 bg-slate-900/60" id="keypad">
+      <!-- Row 1 -->
+      <button data-action="clear" class="calc-btn p-4 rounded-2xl bg-slate-800/80 hover:bg-rose-500/20 text-rose-400 font-semibold text-lg flex items-center justify-center border border-slate-700/40">AC</button>
+      <button data-action="backspace" class="calc-btn p-4 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium text-lg flex items-center justify-center border border-slate-700/40" title="Backspace">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.5-6.5A2 2 0 0110.914 5H20a2 2 0 012 2v10a2 2 0 01-2 2h-9.086a2 2 0 01-1.414-.586L3 12z" />
+        </svg>
+      </button>
+      <button data-action="percent" class="calc-btn p-4 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-semibold text-lg flex items-center justify-center border border-slate-700/40">%</button>
+      <button data-operator="/" class="calc-btn p-4 rounded-2xl bg-indigo-600/90 hover:bg-indigo-500 text-white font-semibold text-xl flex items-center justify-center shadow-lg shadow-indigo-600/20">÷</button>
+
+      <!-- Row 2 -->
+      <button data-num="7" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">7</button>
+      <button data-num="8" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">8</button>
+      <button data-num="9" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">9</button>
+      <button data-operator="*" class="calc-btn p-4 rounded-2xl bg-indigo-600/90 hover:bg-indigo-500 text-white font-semibold text-xl flex items-center justify-center shadow-lg shadow-indigo-600/20">×</button>
+
+      <!-- Row 3 -->
+      <button data-num="4" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">4</button>
+      <button data-num="5" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">5</button>
+      <button data-num="6" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">6</button>
+      <button data-operator="-" class="calc-btn p-4 rounded-2xl bg-indigo-600/90 hover:bg-indigo-500 text-white font-semibold text-xl flex items-center justify-center shadow-lg shadow-indigo-600/20">−</button>
+
+      <!-- Row 4 -->
+      <button data-num="1" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">1</button>
+      <button data-num="2" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">2</button>
+      <button data-num="3" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">3</button>
+      <button data-operator="+" class="calc-btn p-4 rounded-2xl bg-indigo-600/90 hover:bg-indigo-500 text-white font-semibold text-xl flex items-center justify-center shadow-lg shadow-indigo-600/20">+</button>
+
+      <!-- Row 5 -->
+      <button data-action="negate" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-200 font-medium text-lg flex items-center justify-center border border-slate-800" title="Negate">±</button>
+      <button data-num="0" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-medium text-xl flex items-center justify-center border border-slate-800">0</button>
+      <button data-action="decimal" class="calc-btn p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/60 text-slate-100 font-bold text-xl flex items-center justify-center border border-slate-800">.</button>
+      <button data-action="equals" class="calc-btn p-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-2xl flex items-center justify-center shadow-lg shadow-emerald-600/25">=</button>
+    </section>
+
+    <!-- Bottom Instruction Bar -->
+    <footer class="py-2.5 px-6 bg-slate-950/70 border-t border-slate-800/60 text-center text-xs text-slate-500">
+      <span>Full keyboard input supported (0-9, +, -, *, /, Enter, Backspace, Esc)</span>
+    </footer>
+  </main>
+
+  <script>
+    // State management
+    const state = {
+      currentInput: '0',
+      previousInput: null,
+      operator: null,
+      waitingForOperand: false,
+      history: []
+    };
+
+    // DOM Elements
+    const primaryDisplay = document.getElementById('primaryDisplay');
+    const expressionDisplay = document.getElementById('expressionDisplay');
+    const historyDrawer = document.getElementById('historyDrawer');
+    const historyList = document.getElementById('historyList');
+    const historyToggleBtn = document.getElementById('historyToggleBtn');
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    const keypad = document.getElementById('keypad');
+
+    // Operator display symbols
+    const opDisplayMap = {
+      '+': '+',
+      '-': '−',
+      '*': '×',
+      '/': '÷'
+    };
+
+    // Update screen displays
+    function updateDisplay() {
+      // Primary display formatting
+      if (state.currentInput === 'Error' || state.currentInput === 'Cannot divide by 0') {
+        primaryDisplay.textContent = state.currentInput;
+      } else {
+        // Handle trailing decimal during active entry
+        if (state.currentInput.endsWith('.')) {
+          const formatted = formatNumber(state.currentInput.slice(0, -1));
+          primaryDisplay.textContent = formatted + '.';
+        } else {
+          primaryDisplay.textContent = formatNumber(state.currentInput);
+        }
+      }
+
+      // Expression display formatting
+      if (state.operator && state.previousInput !== null) {
+        const symbol = opDisplayMap[state.operator] || state.operator;
+        expressionDisplay.textContent = `${formatNumber(state.previousInput)} ${symbol}`;
+      } else {
+        expressionDisplay.textContent = '';
+      }
+    }
+
+    // Format number string with commas (supports decimals)
+    function formatNumber(numStr) {
+      if (!numStr && numStr !== '0') return '0';
+      if (isNaN(numStr)) return numStr;
+      
+      const parts = numStr.toString().split('.');
+      const integerPart = parts[0];
+      const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+
+      // Format integer part with thousands separator
+      const formattedInt = Number(integerPart).toLocaleString('en-US');
+      return formattedInt + decimalPart;
+    }
+
+    // Input digit handling
+    function inputDigit(digit) {
+      if (state.waitingForOperand) {
+        state.currentInput = String(digit);
+        state.waitingForOperand = false;
+      } else {
+        if (state.currentInput === '0') {
+          state.currentInput = String(digit);
+        } else if (state.currentInput.length < 16) {
+          state.currentInput += String(digit);
+        }
+      }
+      updateDisplay();
+    }
+
+    // Input decimal point
+    function inputDecimal() {
+      if (state.waitingForOperand) {
+        state.currentInput = '0.';
+        state.waitingForOperand = false;
+      } else if (!state.currentInput.includes('.')) {
+        state.currentInput += '.';
+      }
+      updateDisplay();
+    }
+
+    // Handle standard operators (+, -, *, /)
+    function handleOperator(nextOperator) {
+      const inputValue = parseFloat(state.currentInput);
+
+      if (state.operator && state.waitingForOperand) {
+        // Change operator if pressed consecutively
+        state.operator = nextOperator;
+        updateDisplay();
+        return;
+      }
+
+      if (state.previousInput === null) {
+        state.previousInput = inputValue;
+      } else if (state.operator) {
+        const result = calculate(state.previousInput, inputValue, state.operator);
+        if (result === 'Error') {
+          resetAll();
+          state.currentInput = 'Cannot divide by 0';
+          updateDisplay();
+          return;
+        }
+        state.currentInput = String(result);
+        state.previousInput = result;
+      }
+
+      state.waitingForOperand = true;
+      state.operator = nextOperator;
+      updateDisplay();
+    }
+
+    // Accurate calculation logic
+    function calculate(firstOperand, secondOperand, operator) {
+      let result = 0;
+      switch (operator) {
+        case '+':
+          result = firstOperand + secondOperand;
+          break;
+        case '-':
+          result = firstOperand - secondOperand;
+          break;
+        case '*':
+          result = firstOperand * secondOperand;
+          break;
+        case '/':
+          if (secondOperand === 0) return 'Error';
+          result = firstOperand / secondOperand;
+          break;
+        default:
+          return secondOperand;
+      }
+
+      // Avoid floating point inaccuracies (e.g., 0.1 + 0.2 = 0.30000000000000004)
+      return parseFloat(result.toPrecision(12));
+    }
+
+    // Handle equals (=) execution
+    function handleEquals() {
+      if (state.operator === null || state.previousInput === null || state.waitingForOperand) {
+        return;
+      }
+
+      const inputValue = parseFloat(state.currentInput);
+      const symbol = opDisplayMap[state.operator] || state.operator;
+      const expression = `${formatNumber(state.previousInput)} ${symbol} ${formatNumber(state.currentInput)}`;
+      const result = calculate(state.previousInput, inputValue, state.operator);
+
+      if (result === 'Error') {
+        resetAll();
+        state.currentInput = 'Cannot divide by 0';
+        updateDisplay();
+        return;
+      }
+
+      // Add to history
+      addHistoryRecord(expression, result);
+
+      state.currentInput = String(result);
+      state.previousInput = null;
+      state.operator = null;
+      state.waitingForOperand = true;
+      expressionDisplay.textContent = `${expression} =`;
+      primaryDisplay.textContent = formatNumber(state.currentInput);
+    }
+
+    // Percentage operation
+    function handlePercent() {
+      const current = parseFloat(state.currentInput);
+      if (isNaN(current)) return;
+      const value = current / 100;
+      state.currentInput = String(parseFloat(value.toPrecision(12)));
+      updateDisplay();
+    }
+
+    // Negate current value (+/-)
+    function handleNegate() {
+      if (state.currentInput === '0' || state.currentInput === 'Error') return;
+      state.currentInput = state.currentInput.startsWith('-')
+        ? state.currentInput.slice(1)
+        : '-' + state.currentInput;
+      updateDisplay();
+    }
+
+    // Backspace / Delete last digit
+    function handleBackspace() {
+      if (state.waitingForOperand) return;
+      if (state.currentInput.length > 1) {
+        state.currentInput = state.currentInput.slice(0, -1);
+      } else {
+        state.currentInput = '0';
+      }
+      updateDisplay();
+    }
+
+    // Reset all internal state
+    function resetAll() {
+      state.currentInput = '0';
+      state.previousInput = null;
+      state.operator = null;
+      state.waitingForOperand = false;
+      updateDisplay();
+    }
+
+    // History drawer handling
+    function addHistoryRecord(expr, res) {
+      state.history.unshift({ expr, result: res });
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (state.history.length === 0) {
+        historyList.innerHTML = '<div class="text-slate-500 text-xs italic py-2 text-center">No calculations yet</div>';
+        return;
+      }
+
+      historyList.innerHTML = '';
+      state.history.forEach((item) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 cursor-pointer transition flex flex-col items-end border border-slate-800/40';
+        itemEl.innerHTML = `
+          <div class="text-xs text-slate-400 font-mono">${item.expr}</div>
+          <div class="text-base text-emerald-400 font-semibold font-mono">= ${formatNumber(item.result)}</div>
+        `;
+        // Clicking a history entry restores its result
+        itemEl.addEventListener('click', () => {
+          state.currentInput = String(item.result);
+          state.waitingForOperand = false;
+          updateDisplay();
+        });
+        historyList.appendChild(itemEl);
+      });
+    }
+
+    // Keypad Click Event delegation
+    keypad.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      const num = btn.getAttribute('data-num');
+      const op = btn.getAttribute('data-operator');
+      const action = btn.getAttribute('data-action');
+
+      if (num !== null) {
+        inputDigit(num);
+      } else if (op !== null) {
+        handleOperator(op);
+      } else if (action) {
+        switch (action) {
+          case 'clear':
+            resetAll();
+            break;
+          case 'backspace':
+            handleBackspace();
+            break;
+          case 'percent':
+            handlePercent();
+            break;
+          case 'negate':
+            handleNegate();
+            break;
+          case 'decimal':
+            inputDecimal();
+            break;
+          case 'equals':
+            handleEquals();
+            break;
+        }
+      }
+    });
+
+    // History Toggle & Clear
+    historyToggleBtn.addEventListener('click', () => {
+      historyDrawer.classList.toggle('hidden');
+    });
+
+    clearHistoryBtn.addEventListener('click', () => {
+      state.history = [];
+      renderHistory();
+    });
+
+    // Keyboard support with button click visual feedback
+    window.addEventListener('keydown', (e) => {
+      const key = e.key;
+      let matchedButton = null;
+
+      if (!isNaN(key) && key !== ' ') {
+        inputDigit(key);
+        matchedButton = document.querySelector(`[data-num="${key}"]`);
+      } else if (key === '.') {
+        inputDecimal();
+        matchedButton = document.querySelector('[data-action="decimal"]');
+      } else if (['+', '-', '*', '/'].includes(key)) {
+        handleOperator(key);
+        matchedButton = document.querySelector(`[data-operator="${key}"]`);
+      } else if (key === 'Enter' || key === '=') {
+        e.preventDefault();
+        handleEquals();
+        matchedButton = document.querySelector('[data-action="equals"]');
+      } else if (key === 'Backspace') {
+        handleBackspace();
+        matchedButton = document.querySelector('[data-action="backspace"]');
+      } else if (key === 'Escape') {
+        resetAll();
+        matchedButton = document.querySelector('[data-action="clear"]');
+      } else if (key === '%') {
+        handlePercent();
+        matchedButton = document.querySelector('[data-action="percent"]');
+      }
+
+      // Add temporary visual feedback class to mapped keyboard press
+      if (matchedButton) {
+        matchedButton.classList.add('btn-pressed');
+        setTimeout(() => matchedButton.classList.remove('btn-pressed'), 120);
+      }
+    });
+
+    // Initial render
+    updateDisplay();
+  </script>
+</body>
+</html>
